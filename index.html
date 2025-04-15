@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Poisson Process Simulation</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    </head>
+    <body>
+        <h2>Poisson Process - Step Plot (10 photons/sec)</h2>
+        <div
+            id="plot"
+            style="width: 80%; max-width: 800px; height: 500px"
+        ></div>
+
+        <script>
+            const rate = 10; // photons per second
+            const meanInterval = 1 / rate;
+            const nEvents = 50;
+
+            // Generate inter-arrival times (exponential distribution)
+            function exponential(lambda) {
+                return -Math.log(1 - Math.random()) / lambda;
+            }
+
+            const interArrivalTimes = [];
+            for (let i = 0; i < nEvents; i++) {
+                interArrivalTimes.push(exponential(rate));
+            }
+
+            // Calculate cumulative times
+            const eventTimes = interArrivalTimes.reduce((acc, val, i) => {
+                acc.push(i === 0 ? val : acc[i - 1] + val);
+                return acc;
+            }, []);
+
+            // Prepare step data
+            let x = [0];
+            let y = [0];
+            let index = 0;
+
+            Plotly.newPlot(
+                "plot",
+                [
+                    {
+                        x: x,
+                        y: y,
+                        type: "scatter",
+                        mode: "lines",
+                        line: { shape: "hv", color: "blue" },
+                    },
+                ],
+                {
+                    xaxis: {
+                        title: "Time (s)",
+                        range: [0, eventTimes[eventTimes.length - 1] + 1],
+                    },
+                    yaxis: { title: "Photon count", range: [0, nEvents + 1] },
+                    title: "Poisson Process Simulation",
+                },
+            );
+
+            function step() {
+                if (index >= nEvents) return;
+
+                let t = eventTimes[index];
+                let count = index + 1;
+
+                // Step: repeat last time and new time with same and new count
+                x.push(t);
+                y.push(count - 1);
+                x.push(t);
+                y.push(count);
+
+                Plotly.update("plot", { x: [x], y: [y] });
+                index++;
+
+                // Schedule next step
+                setTimeout(step, 300);
+            }
+
+            step();
+        </script>
+    </body>
+</html>

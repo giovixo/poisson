@@ -6,11 +6,12 @@
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     </head>
     <body>
-        <h2>Poisson Process - Step Plot (10 photons/sec)</h2>
         <div
             id="plot"
             style="width: 80%; max-width: 800px; height: 500px"
         ></div>
+
+        <button id="startButton" style="margin: 20px; padding: 10px 20px;">Start</button>
 
         <script>
             const rate = 10; // photons per second
@@ -22,22 +23,28 @@
                 return -Math.log(1 - Math.random()) / lambda;
             }
 
-            const interArrivalTimes = [];
-            for (let i = 0; i < nEvents; i++) {
-                interArrivalTimes.push(exponential(rate));
-            }
-
-            // Calculate cumulative times
-            const eventTimes = interArrivalTimes.reduce((acc, val, i) => {
-                acc.push(i === 0 ? val : acc[i - 1] + val);
-                return acc;
-            }, []);
-
-            // Prepare step data
+            let interArrivalTimes = [];
+            let eventTimes = [];
             let x = [0];
             let y = [0];
             let index = 0;
 
+            // Function to initialize the simulation
+            function initializeSimulation() {
+                // Reseed the random number generator by resetting interArrivalTimes and eventTimes
+                interArrivalTimes = [];
+                for (let i = 0; i < nEvents; i++) {
+                    interArrivalTimes.push(exponential(rate));
+                }
+
+                // Calculate cumulative times
+                eventTimes = interArrivalTimes.reduce((acc, val, i) => {
+                    acc.push(i === 0 ? val : acc[i - 1] + val);
+                    return acc;
+                }, []);
+            }
+
+            // Initialize empty plot
             Plotly.newPlot(
                 "plot",
                 [
@@ -52,7 +59,7 @@
                 {
                     xaxis: {
                         title: "Time (s)",
-                        range: [0, eventTimes[eventTimes.length - 1] + 1],
+                        range: [0, 10], // Placeholder range
                     },
                     yaxis: { title: "Photon count", range: [0, nEvents + 1] },
                     title: "Poisson Process Simulation",
@@ -78,7 +85,59 @@
                 setTimeout(step, 300);
             }
 
-            step();
+            // Add event listener to the "Start" button
+            document.getElementById("startButton").addEventListener("click", () => {
+                // Reset the plot and variables
+                x = [0];
+                y = [0];
+                index = 0;
+
+                // Reinitialize the simulation
+                initializeSimulation();
+
+                // Update the plot with new ranges
+                Plotly.react(
+                    "plot",
+                    [
+                        {
+                            x: x,
+                            y: y,
+                            type: "scatter",
+                            mode: "lines",
+                            line: { shape: "hv", color: "blue" },
+                        },
+                    ],
+                    {
+                        xaxis: {
+                            title: "Time (s)",
+                            range: [0, eventTimes[eventTimes.length - 1] + 1],
+                        },
+                        yaxis: { title: "Photon count", range: [0, nEvents + 1] },
+                        title: "Poisson Process Simulation",
+                    },
+                );
+
+                // Start the simulation
+                step();
+            });
+
+            // Initialize the simulation on page load
+            initializeSimulation();
+        </script>
+        <p>
+            This simulation shows a Poisson process with a rate of 10 photons/sec.
+            The x-axis represents time in seconds, and the y-axis represents the
+            cumulative count of photons detected.
+            The inter-arrival times are generated using an exponential distribution,
+            which is characteristic of Poisson processes.
+        </p>
+
+        <footer style="text-align: center; padding: 1em; background-color: #f2f2f2;">
+            <p>&copy; <span id="year"></span> Giovanni De Cesare. All rights reserved.</p>
+        </footer>
+
+        <script>
+            document.getElementById("year").textContent = new Date().getFullYear();
         </script>
     </body>
 </html>
